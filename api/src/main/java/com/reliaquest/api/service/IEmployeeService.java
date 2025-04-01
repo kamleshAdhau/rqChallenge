@@ -1,9 +1,8 @@
 package com.reliaquest.api.service;
 
+import com.reliaquest.api.model.Employee;
 import java.io.IOException;
 import java.util.List;
-
-import com.reliaquest.api.model.Employee;
 
 public interface IEmployeeService {
 
@@ -13,7 +12,7 @@ public interface IEmployeeService {
 
     Employee getEmployeeById(String id);
 
-    Integer getHighestSalaryOfEmployees();
+    Integer getHighestSalaryOfEmployee();
 
     List<String> getTopTenHighestEarningEmployeeNames();
 

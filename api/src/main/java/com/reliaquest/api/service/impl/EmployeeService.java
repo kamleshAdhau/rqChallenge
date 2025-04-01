@@ -6,8 +6,6 @@ import com.reliaquest.api.model.EmployeeResponse;
 import com.reliaquest.api.service.IEmployeeService;
 import com.reliaquest.api.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -15,8 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Comparator;
@@ -30,90 +28,101 @@ public class EmployeeService implements IEmployeeService {
     @Autowired
     private RestTemplate restTemplate;
 
-    private final Logger logger = LoggerFactory.getLogger(EmployeeService.class);
+    public List<Employee> getAllEmployees(){
+        log.info("Fetching all employees from external service.");
 
-    public List<Employee> getAllEmployees() throws IOException {
         ResponseEntity<EmployeeList> responseEntity = null;
         try {
             responseEntity = restTemplate.exchange(
-                    new URI(Constants.GET_EMPLOYEE_URL),
-                    HttpMethod.GET,
-                    null,
-                    EmployeeList.class
-            );
+                    new URI(Constants.GET_EMPLOYEE_URL), HttpMethod.GET, null, EmployeeList.class);
         } catch (URISyntaxException e) {
-            logger.error(e.getMessage());
+            log.error("Error while fetching all employee details: {}",e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
-        logger.info("Response of Request :{} ", responseEntity.getBody().getData());
+        log.info("Successfully retrieved {} employees", responseEntity.getBody().getData().size());
         return responseEntity.getBody().getData();
     }
-
 
     public List<Employee> getEmployeesByNameSearch(String searchString) {
         List<Employee> employeeList = null;
         try {
             employeeList = getAllEmployees();
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+        } catch (Exception e) {
+            log.error("Error while searching employee details by Name: {}",e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
-        return employeeList.stream()
-                .filter(employee -> employee.getEmployee_name().contains(searchString))
+        List<Employee> result = employeeList.stream()
+                .filter(employee -> employee.getEmployeeName().contains(searchString))
                 .collect(Collectors.toList());
+        log.info("Found {} employees matching search criteria.", result.size());
+        return result;
     }
 
-
     public Employee getEmployeeById(String id) {
-        ResponseEntity<EmployeeResponse> responseEntity = restTemplate.exchange(
-                Constants.GET_EMPLOYEE_ID_URL,
-                HttpMethod.GET,
-                null,
-                EmployeeResponse.class,
-                id);
+        ResponseEntity<EmployeeResponse> responseEntity =
+                restTemplate.exchange(Constants.GET_EMPLOYEE_ID_URL, HttpMethod.GET, null, EmployeeResponse.class, id);
 
-        logger.info("Response of Request :{} ", responseEntity.getBody().getData());
+        if (responseEntity.getStatusCode() == HttpStatus.OK) {
+            log.info("Successfully retrieved employee details with ID: {}", id);
+        } else {
+            log.warn("Failed to retrieve employee with ID: {}", id);
+        }
+
         return responseEntity.getBody().getData();
     }
 
-    public Integer getHighestSalaryOfEmployees() {
+    public Integer getHighestSalaryOfEmployee() {
+        log.info("Fetching highest salary among employees.");
         List<Employee> employeeList = null;
         try {
             employeeList = getAllEmployees();
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+        } catch (Exception e) {
+            log.error("Error fetching employee while calculating highest salary: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
-        return employeeList.stream()
-                .max(Comparator.comparing(Employee::getEmployee_salary))
-                .get().getEmployee_salary();
+        Integer highestSalary = employeeList.stream()
+                .max(Comparator.comparing(Employee::getEmployeeSalary))
+                .get()
+                .getEmployeeSalary();
+        log.info("Highest salary among employees is: {}", highestSalary);
+        return highestSalary;
     }
 
     public List<String> getTopTenHighestEarningEmployeeNames() {
+        log.info("Fetching top 10 highest earning employee names.");
         List<Employee> employeeList = null;
         try {
             employeeList = getAllEmployees();
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+        } catch (Exception e) {
+            log.error("Error while calculating top earners: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
 
-        return employeeList.stream().sorted(Comparator.comparing(Employee::getEmployee_salary).reversed())
+        List<String> topTenEmployeeNames = employeeList.stream()
+                .sorted(Comparator.comparing(Employee::getEmployeeSalary).reversed())
                 .limit(10)
-                .map(Employee::getEmployee_name)
+                .map(Employee::getEmployeeName)
                 .collect(Collectors.toList());
+        log.info("Top 10 highest earning employees: {}", topTenEmployeeNames);
+        return topTenEmployeeNames;
     }
 
     public Employee createEmployee(String name, String salary, String age) {
+        log.info("Creating new employee with name: {}, salary: {}, age: {}", name, salary, age);
         Employee employee = Employee.builder()
-                .employee_name(name)
-                .employee_salary(Integer.parseInt(salary))
-                .employee_age(Integer.parseInt(age))
+                .employeeName(name)
+                .employeeSalary(Integer.parseInt(salary))
+                .employeeAge(Integer.parseInt(age))
                 .build();
 
         ResponseEntity<EmployeeResponse> employeeResponseResponseEntity = restTemplate.exchange(
-                Constants.CREATE_EMPLOYEE_URL,
-                HttpMethod.POST,
-                new HttpEntity<>(employee),
-                EmployeeResponse.class);
+                Constants.CREATE_EMPLOYEE_URL, HttpMethod.POST, new HttpEntity<>(employee), EmployeeResponse.class);
 
-        logger.info("Response of Request :{} ", employeeResponseResponseEntity.getBody().getData());
+        if (employeeResponseResponseEntity.getStatusCode() == HttpStatus.CREATED) {
+            log.info("Successfully created employee: {}",name);
+        } else {
+            log.warn("Failed to create employee with name: {}", name);
+        }
 
         return employeeResponseResponseEntity.getBody().getData();
     }
@@ -123,15 +132,14 @@ public class EmployeeService implements IEmployeeService {
         Employee employee = getEmployeeById(id);
 
         ResponseEntity<EmployeeResponse> employeeResponseResponseEntity = restTemplate.exchange(
-                Constants.DELETE_EMPLOYEE_URL,
-                HttpMethod.DELETE,
-                null,
-                EmployeeResponse.class,
-                id);
+                Constants.DELETE_EMPLOYEE_URL, HttpMethod.DELETE, null, EmployeeResponse.class, id);
 
-        if (employeeResponseResponseEntity.getStatusCode() == HttpStatus.OK)
-            return employee.getEmployee_name();
-
-        return "Employee does not exist";
+        if (employeeResponseResponseEntity.getStatusCode() == HttpStatus.OK) {
+            log.info("Successfully deleted employee with name: {}", employee.getEmployeeName());
+            return employee.getEmployeeName();
+        } else {
+            log.warn("Failed to delete employee with ID: {}", id);
+            return "Employee does not exist";
+        }
     }
 }
