@@ -3,6 +3,7 @@ package com.reliaquest.api.service;
 import com.reliaquest.api.model.Employee;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface IEmployeeService {
 
@@ -16,7 +17,7 @@ public interface IEmployeeService {
 
     List<String> getTopTenHighestEarningEmployeeNames();
 
-    Employee createEmployee(String name, String salary, String age);
+    Employee createEmployee(Map<String, Object> employeeInput);
 
     String deleteEmployee(String id);
 }

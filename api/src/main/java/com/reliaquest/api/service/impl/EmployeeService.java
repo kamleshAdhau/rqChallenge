@@ -1,6 +1,7 @@
 package com.reliaquest.api.service.impl;
 
 import com.reliaquest.api.model.Employee;
+import com.reliaquest.api.model.EmployeeInput;
 import com.reliaquest.api.model.EmployeeList;
 import com.reliaquest.api.model.EmployeeResponse;
 import com.reliaquest.api.service.IEmployeeService;
@@ -19,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,7 +30,7 @@ public class EmployeeService implements IEmployeeService {
     @Autowired
     private RestTemplate restTemplate;
 
-    public List<Employee> getAllEmployees(){
+    public List<Employee> getAllEmployees() {
         log.info("Fetching all employees from external service.");
 
         ResponseEntity<EmployeeList> responseEntity = null;
@@ -36,10 +38,12 @@ public class EmployeeService implements IEmployeeService {
             responseEntity = restTemplate.exchange(
                     new URI(Constants.GET_EMPLOYEE_URL), HttpMethod.GET, null, EmployeeList.class);
         } catch (URISyntaxException e) {
-            log.error("Error while fetching all employee details: {}",e.getMessage());
+            log.error("Error while fetching all employee details: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
-        log.info("Successfully retrieved {} employees", responseEntity.getBody().getData().size());
+        log.info(
+                "Successfully retrieved {} employees",
+                responseEntity.getBody().getData().size());
         return responseEntity.getBody().getData();
     }
 
@@ -48,7 +52,7 @@ public class EmployeeService implements IEmployeeService {
         try {
             employeeList = getAllEmployees();
         } catch (Exception e) {
-            log.error("Error while searching employee details by Name: {}",e.getMessage());
+            log.error("Error while searching employee details by Name: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
         List<Employee> result = employeeList.stream()
@@ -107,19 +111,24 @@ public class EmployeeService implements IEmployeeService {
         return topTenEmployeeNames;
     }
 
-    public Employee createEmployee(String name, String salary, String age) {
-        log.info("Creating new employee with name: {}, salary: {}, age: {}", name, salary, age);
-        Employee employee = Employee.builder()
-                .employeeName(name)
-                .employeeSalary(Integer.parseInt(salary))
-                .employeeAge(Integer.parseInt(age))
-                .build();
+
+    public Employee createEmployee(Map<String, Object> employeeInput) {
+        String name = (String) employeeInput.get("name");
+        String salary = (String) employeeInput.get("salary");
+        String age = (String) employeeInput.get("age");
+        String title = (String) employeeInput.get("title");
+        log.info("Creating new employee with name: {}, salary: {}, age: {}, title: {}", name, salary, age, title);
+        EmployeeInput input = new EmployeeInput();
+        input.setName(name);
+        input.setSalary(Integer.parseInt(salary));
+        input.setAge(Integer.parseInt(age));
+        input.setTitle(title);
 
         ResponseEntity<EmployeeResponse> employeeResponseResponseEntity = restTemplate.exchange(
-                Constants.CREATE_EMPLOYEE_URL, HttpMethod.POST, new HttpEntity<>(employee), EmployeeResponse.class);
+                Constants.GET_EMPLOYEE_URL, HttpMethod.POST, new HttpEntity<>(input), EmployeeResponse.class);
 
         if (employeeResponseResponseEntity.getStatusCode() == HttpStatus.CREATED) {
-            log.info("Successfully created employee: {}",name);
+            log.info("Successfully created employee: {}", name);
         } else {
             log.warn("Failed to create employee with name: {}", name);
         }
@@ -132,7 +141,7 @@ public class EmployeeService implements IEmployeeService {
         Employee employee = getEmployeeById(id);
 
         ResponseEntity<EmployeeResponse> employeeResponseResponseEntity = restTemplate.exchange(
-                Constants.DELETE_EMPLOYEE_URL, HttpMethod.DELETE, null, EmployeeResponse.class, id);
+                Constants.GET_EMPLOYEE_URL, HttpMethod.DELETE, null, EmployeeResponse.class, id);
 
         if (employeeResponseResponseEntity.getStatusCode() == HttpStatus.OK) {
             log.info("Successfully deleted employee with name: {}", employee.getEmployeeName());

@@ -1,18 +1,11 @@
 package com.reliaquest.api.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
-
 import com.reliaquest.api.model.Employee;
+import com.reliaquest.api.model.EmployeeInput;
 import com.reliaquest.api.model.EmployeeList;
 import com.reliaquest.api.model.EmployeeResponse;
 import com.reliaquest.api.service.impl.EmployeeService;
 import com.reliaquest.api.utils.Constants;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -25,6 +18,17 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -41,67 +45,67 @@ public class EmployeeServiceTest {
     @BeforeEach
     public void setup() {
         employeeList.add(Employee.builder()
-                .id(1)
+                .id("1")
                 .employeeName("Ranjit")
                 .employeeAge(23)
                 .employeeSalary(1000)
                 .build());
         employeeList.add(Employee.builder()
-                .id(2)
+                .id("2")
                 .employeeName("Bradley")
                 .employeeAge(25)
                 .employeeSalary(1002)
                 .build());
         employeeList.add(Employee.builder()
-                .id(3)
+                .id("3")
                 .employeeName("Tiger")
                 .employeeAge(26)
                 .employeeSalary(1004)
                 .build());
         employeeList.add(Employee.builder()
-                .id(4)
+                .id("4")
                 .employeeName("Nixon")
                 .employeeAge(27)
                 .employeeSalary(100001)
                 .build());
         employeeList.add(Employee.builder()
-                .id(5)
+                .id("5")
                 .employeeName("Kennedy")
                 .employeeAge(27)
                 .employeeSalary(100006)
                 .build());
         employeeList.add(Employee.builder()
-                .id(6)
+                .id("6")
                 .employeeName("Haley")
                 .employeeAge(27)
                 .employeeSalary(10000)
                 .build());
         employeeList.add(Employee.builder()
-                .id(7)
+                .id("7")
                 .employeeName("Doris")
                 .employeeAge(27)
                 .employeeSalary(10001)
                 .build());
         employeeList.add(Employee.builder()
-                .id(8)
+                .id("8")
                 .employeeName("Vance")
                 .employeeAge(27)
                 .employeeSalary(10002)
                 .build());
         employeeList.add(Employee.builder()
-                .id(9)
+                .id("9")
                 .employeeName("Caesar")
                 .employeeAge(27)
                 .employeeSalary(10003)
                 .build());
         employeeList.add(Employee.builder()
-                .id(10)
+                .id("10")
                 .employeeName("Yuri")
                 .employeeAge(27)
                 .employeeSalary(10004)
                 .build());
         employeeList.add(Employee.builder()
-                .id(11)
+                .id("11")
                 .employeeName("Jenette")
                 .employeeAge(27)
                 .employeeSalary(10005)
@@ -140,7 +144,7 @@ public class EmployeeServiceTest {
         String id = "1";
         EmployeeResponse employeeResponse = EmployeeResponse.builder()
                 .data(Employee.builder()
-                        .id(1)
+                        .id("1")
                         .employeeName("Ranjit")
                         .employeeAge(23)
                         .employeeSalary(1000)
@@ -180,17 +184,25 @@ public class EmployeeServiceTest {
                 .employeeAge(29)
                 .build();
 
+//        EmployeeInput employeeInput=EmployeeInput.builder().name("Byrd").salary(1000).age(29).title("Manager").build();
+
+
         EmployeeResponse employeeResponse =
                 EmployeeResponse.builder().data(employee).status("Success").build();
 
         when(restTemplate.exchange(
-                        Constants.CREATE_EMPLOYEE_URL,
+                        Constants.GET_EMPLOYEE_URL,
                         HttpMethod.POST,
                         new HttpEntity<>(employee),
                         EmployeeResponse.class))
                 .thenReturn(new ResponseEntity<>(employeeResponse, HttpStatus.OK));
 
-        Employee serviceEmployee = employeeService.createEmployee("Byrd", "1004", "29");
+        Map<String,Object> employeeInput= new HashMap<>();
+        employeeInput.put("name","Byrd");
+        employeeInput.put("salary","1004");
+        employeeInput.put("age","29");
+        employeeInput.put("title","Manager");
+        Employee serviceEmployee = employeeService.createEmployee(employeeInput);
         assertEquals(serviceEmployee, employee);
     }
 
@@ -199,7 +211,7 @@ public class EmployeeServiceTest {
         String id = "1";
         EmployeeResponse employeeResponse = getEmployeeByID();
 
-        when(restTemplate.exchange(Constants.DELETE_EMPLOYEE_URL, HttpMethod.DELETE, null, EmployeeResponse.class, id))
+        when(restTemplate.exchange(Constants.GET_EMPLOYEE_URL, HttpMethod.DELETE, null, EmployeeResponse.class, id))
                 .thenReturn(new ResponseEntity<>(employeeResponse, HttpStatus.OK));
 
         String employeeName = employeeService.deleteEmployee("1");
