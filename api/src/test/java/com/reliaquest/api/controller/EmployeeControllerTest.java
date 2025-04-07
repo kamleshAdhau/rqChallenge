@@ -1,8 +1,15 @@
 package com.reliaquest.api.controller;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reliaquest.api.model.Employee;
 import com.reliaquest.api.service.impl.EmployeeService;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,14 +17,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 // Load only the EmployeeController class
 @WebMvcTest(EmployeeController.class)
@@ -55,7 +54,6 @@ public class EmployeeControllerTest {
                 .andExpect(jsonPath("$.employee_email").value("alice@example.com"));
     }
 
-
     @Test
     public void testGetEmployeeById_NotFound() throws Exception {
         Mockito.when(employeeService.getEmployeeById(anyString())).thenReturn(null);
@@ -80,8 +78,7 @@ public class EmployeeControllerTest {
                 "name", "Charlie",
                 "salary", "5500",
                 "age", "30",
-                "title", "Developer"
-        );
+                "title", "Developer");
 
         Mockito.when(employeeService.createEmployee(Mockito.anyMap())).thenReturn(created);
 
@@ -100,8 +97,7 @@ public class EmployeeControllerTest {
     public void testDeleteEmployeeById_Success() throws Exception {
         String uuid = UUID.randomUUID().toString();
 
-        Mockito.when(employeeService.deleteEmployee(uuid))
-                .thenReturn("Employee Alice has been deleted");
+        Mockito.when(employeeService.deleteEmployee(uuid)).thenReturn("Employee Alice has been deleted");
 
         mockMvc.perform(delete("/" + uuid))
                 .andExpect(status().isOk())
@@ -126,8 +122,7 @@ public class EmployeeControllerTest {
                         .age(35)
                         .title("Manager")
                         .email("bob@example.com")
-                        .build()
-        );
+                        .build());
 
         Mockito.when(employeeService.getAllEmployees()).thenReturn(employees);
 
@@ -142,16 +137,14 @@ public class EmployeeControllerTest {
     public void testGetEmployeesByNameSearch_Success() throws Exception {
         String search = "Ali";
 
-        List<Employee> employees = List.of(
-                Employee.builder()
-                        .id(UUID.randomUUID())
-                        .name("Alice")
-                        .salary(5000)
-                        .age(28)
-                        .title("Engineer")
-                        .email("alice@example.com")
-                        .build()
-        );
+        List<Employee> employees = List.of(Employee.builder()
+                .id(UUID.randomUUID())
+                .name("Alice")
+                .salary(5000)
+                .age(28)
+                .title("Engineer")
+                .email("alice@example.com")
+                .build());
 
         Mockito.when(employeeService.getEmployeesByNameSearch(search)).thenReturn(employees);
 
@@ -170,7 +163,6 @@ public class EmployeeControllerTest {
                 .andExpect(content().string("9000"));
     }
 
-
     @Test
     public void testGetTopTenHighestEarningEmployeeNames_Success() throws Exception {
         List<String> names = List.of("Alice", "Bob", "Charlie");
@@ -184,6 +176,4 @@ public class EmployeeControllerTest {
                 .andExpect(jsonPath("$[1]").value("Bob"))
                 .andExpect(jsonPath("$[2]").value("Charlie"));
     }
-
-
 }

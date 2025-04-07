@@ -1,12 +1,21 @@
 package com.reliaquest.api.service;
 
+import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
 import com.reliaquest.api.model.*;
 import com.reliaquest.api.service.impl.EmployeeService;
 import com.reliaquest.api.utils.Constants;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -16,17 +25,6 @@ import org.springframework.http.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-
-import static org.junit.Assert.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -149,12 +147,12 @@ public class EmployeeServiceTest {
         ResponseEntity<ClientResponse<Employee>> responseEntity = new ResponseEntity<>(clientResponse, HttpStatus.OK);
 
         when(restTemplate.exchange(
-                eq(Constants.GET_EMPLOYEE_ID_URL),
-                eq(HttpMethod.GET),
-                isNull(),
-                any(ParameterizedTypeReference.class),
-                eq(id)
-        )).thenReturn(responseEntity);
+                        eq(Constants.GET_EMPLOYEE_ID_URL),
+                        eq(HttpMethod.GET),
+                        isNull(),
+                        any(ParameterizedTypeReference.class),
+                        eq(id)))
+                .thenReturn(responseEntity);
 
         Employee result = employeeService.getEmployeeById(id);
         assertNotNull(result);
@@ -168,20 +166,19 @@ public class EmployeeServiceTest {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Retry-After", "30");
 
-        HttpClientErrorException tooManyRequests = HttpClientErrorException.create(
-                HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests", headers, null, null
-        );
+        HttpClientErrorException tooManyRequests =
+                HttpClientErrorException.create(HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests", headers, null, null);
 
         when(restTemplate.exchange(
-                eq(Constants.GET_EMPLOYEE_ID_URL),
-                eq(HttpMethod.GET),
-                isNull(),
-                any(ParameterizedTypeReference.class),
-                eq(id)
-        )).thenThrow(tooManyRequests);
+                        eq(Constants.GET_EMPLOYEE_ID_URL),
+                        eq(HttpMethod.GET),
+                        isNull(),
+                        any(ParameterizedTypeReference.class),
+                        eq(id)))
+                .thenThrow(tooManyRequests);
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> employeeService.getEmployeeById(id));
+        ResponseStatusException exception =
+                assertThrows(ResponseStatusException.class, () -> employeeService.getEmployeeById(id));
 
         assertEquals(HttpStatus.TOO_MANY_REQUESTS, exception.getStatusCode());
     }
@@ -191,29 +188,22 @@ public class EmployeeServiceTest {
         String id = "non-existent-id";
 
         // Simulate 404 error
-        HttpClientErrorException notFoundException = HttpClientErrorException.create(
-                HttpStatus.NOT_FOUND,
-                "Not Found",
-                HttpHeaders.EMPTY,
-                null,
-                null
-        );
+        HttpClientErrorException notFoundException =
+                HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", HttpHeaders.EMPTY, null, null);
 
         when(restTemplate.exchange(
-                eq(Constants.GET_EMPLOYEE_ID_URL),
-                eq(HttpMethod.GET),
-                isNull(),
-                any(ParameterizedTypeReference.class),
-                eq(id)
-        )).thenThrow(notFoundException);
+                        eq(Constants.GET_EMPLOYEE_ID_URL),
+                        eq(HttpMethod.GET),
+                        isNull(),
+                        any(ParameterizedTypeReference.class),
+                        eq(id)))
+                .thenThrow(notFoundException);
 
         Employee result = employeeService.getEmployeeById(id);
 
         // Since exception is caught and handled as returning null
         assertNull(result);
     }
-
-
 
     @Test
     public void testGetHighestSalaryOfEmployees() throws URISyntaxException, IOException {
@@ -261,10 +251,10 @@ public class EmployeeServiceTest {
         ResponseEntity<EmployeeResponse> mockEntity = new ResponseEntity<>(mockResponse, HttpStatus.CREATED);
 
         when(restTemplate.exchange(
-                eq(Constants.GET_EMPLOYEE_URL),
-                eq(HttpMethod.POST),
-                any(HttpEntity.class),
-                eq(EmployeeResponse.class)))
+                        eq(Constants.GET_EMPLOYEE_URL),
+                        eq(HttpMethod.POST),
+                        any(HttpEntity.class),
+                        eq(EmployeeResponse.class)))
                 .thenReturn(mockEntity);
 
         // Act
@@ -272,13 +262,13 @@ public class EmployeeServiceTest {
 
         // Assert
         assertEquals(expectedEmployee, actualEmployee);
-        verify(restTemplate, times(1)).exchange(
-                eq(Constants.GET_EMPLOYEE_URL),
-                eq(HttpMethod.POST),
-                any(HttpEntity.class),
-                eq(EmployeeResponse.class));
+        verify(restTemplate, times(1))
+                .exchange(
+                        eq(Constants.GET_EMPLOYEE_URL),
+                        eq(HttpMethod.POST),
+                        any(HttpEntity.class),
+                        eq(EmployeeResponse.class));
     }
-
 
     @SuppressWarnings("unchecked")
     @Test
@@ -312,20 +302,20 @@ public class EmployeeServiceTest {
 
         // Mock GET employee by ID
         when(restTemplate.exchange(
-                eq(Constants.GET_EMPLOYEE_ID_URL),
-                eq(HttpMethod.GET),
-                isNull(),
-                any(ParameterizedTypeReference.class),
-                eq(id)
-        )).thenReturn(getResponse);
+                        eq(Constants.GET_EMPLOYEE_ID_URL),
+                        eq(HttpMethod.GET),
+                        isNull(),
+                        any(ParameterizedTypeReference.class),
+                        eq(id)))
+                .thenReturn(getResponse);
 
         // Mock DELETE employee
         when(restTemplate.exchange(
-                eq(Constants.GET_EMPLOYEE_URL),
-                eq(HttpMethod.DELETE),
-                any(HttpEntity.class),
-                any(ParameterizedTypeReference.class)
-        )).thenReturn(deleteResponseEntity);
+                        eq(Constants.GET_EMPLOYEE_URL),
+                        eq(HttpMethod.DELETE),
+                        any(HttpEntity.class),
+                        any(ParameterizedTypeReference.class)))
+                .thenReturn(deleteResponseEntity);
 
         // 🔥 Execute service method
         String result = employeeService.deleteEmployee(id);
@@ -333,7 +323,6 @@ public class EmployeeServiceTest {
         // ✅ Validate
         assertEquals("Employee Ranjit has been deleted", result);
     }
-
 
     private void getAllEmployee() throws URISyntaxException {
         EmployeeList employeeList = new EmployeeList(this.employeeList);

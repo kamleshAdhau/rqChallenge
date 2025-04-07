@@ -3,6 +3,12 @@ package com.reliaquest.api.service.impl;
 import com.reliaquest.api.model.*;
 import com.reliaquest.api.service.IEmployeeService;
 import com.reliaquest.api.utils.Constants;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
@@ -14,14 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.RequestToViewNameTranslator;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -65,24 +63,20 @@ public class EmployeeService implements IEmployeeService {
     public Employee getEmployeeById(String id) {
         try {
             ResponseEntity<ClientResponse<Employee>> responseEntity = restTemplate.exchange(
-                    Constants.GET_EMPLOYEE_ID_URL,
-                    HttpMethod.GET,
-                    null,
-                    new ParameterizedTypeReference<>() {
-                    },
-                    id
-            );
+                    Constants.GET_EMPLOYEE_ID_URL, HttpMethod.GET, null, new ParameterizedTypeReference<>() {}, id);
 
             return responseEntity.getBody().getData();
         } catch (HttpClientErrorException.NotFound e) {
             log.warn("Employee not found for ID: {}", id);
             return null; // or throw a custom exception if preferred
-        }catch (HttpClientErrorException.TooManyRequests e) {
-            log.error("Rate limit exceeded when calling getEmployeeById with id {}. Retry after: {}",
-                    id, e.getResponseHeaders().getFirst("Retry-After")); // if header exists
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded, please try again later.");
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.error(
+                    "Rate limit exceeded when calling getEmployeeById with id {}. Retry after: {}",
+                    id,
+                    e.getResponseHeaders().getFirst("Retry-After")); // if header exists
+            throw new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded, please try again later.");
         }
-
     }
 
     public Integer getHighestSalaryOfEmployee() {
@@ -121,7 +115,6 @@ public class EmployeeService implements IEmployeeService {
         return topTenEmployeeNames;
     }
 
-
     public Employee createEmployee(Map<String, Object> employeeInput) {
         String name = (String) employeeInput.get("name");
         String salary = (String) employeeInput.get("salary");
@@ -152,9 +145,7 @@ public class EmployeeService implements IEmployeeService {
                 Constants.GET_EMPLOYEE_URL,
                 HttpMethod.DELETE,
                 new HttpEntity<>(input),
-                new ParameterizedTypeReference<>() {
-                }
-        );
+                new ParameterizedTypeReference<>() {});
 
         Boolean success = responseEntity.getBody().getData();
         if (Boolean.TRUE.equals(success)) {

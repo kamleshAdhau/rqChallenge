@@ -12,17 +12,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class EmployeeInput {
 
-        @NotBlank
-        private String name;
+    @NotBlank
+    private String name;
 
-        @Positive
-        @NotNull
-        private Integer salary;
+    @Positive @NotNull private Integer salary;
 
-        @Min(16)
-        @Max(75)
-        @NotNull private Integer age;
+    @Min(16)
+    @Max(75)
+    @NotNull private Integer age;
 
-        @NotBlank
-        private String title;
+    @NotBlank
+    private String title;
 }
