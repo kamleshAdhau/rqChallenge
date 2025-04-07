@@ -1,16 +1,29 @@
 package com.reliaquest.api.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
+
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Employee {
-    private String id;
-    private String employeeName;
+    private UUID id;
+
+    @JsonProperty("employee_name")
+    private String name;
+
+    @JsonProperty("employee_salary")
+    private Integer salary;
+
+    @JsonProperty("employee_age")
+    private Integer age;
+
+    @JsonProperty("employee_title")
     private String title;
-    private Integer employeeSalary;
-    private Integer employeeAge;
-    private String profileImage;
+
+    @JsonProperty("employee_email")
+    private String email;
 }

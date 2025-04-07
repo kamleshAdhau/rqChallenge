@@ -1,6 +1,8 @@
 package com.reliaquest.api.service;
 
 import com.reliaquest.api.model.Employee;
+import com.reliaquest.api.model.EmployeeRes;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;

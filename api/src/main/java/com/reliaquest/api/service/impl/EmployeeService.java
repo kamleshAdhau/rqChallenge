@@ -1,20 +1,20 @@
 package com.reliaquest.api.service.impl;
 
-import com.reliaquest.api.model.Employee;
-import com.reliaquest.api.model.EmployeeInput;
-import com.reliaquest.api.model.EmployeeList;
-import com.reliaquest.api.model.EmployeeResponse;
+import com.reliaquest.api.model.*;
 import com.reliaquest.api.service.IEmployeeService;
 import com.reliaquest.api.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.RequestToViewNameTranslator;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -56,23 +56,33 @@ public class EmployeeService implements IEmployeeService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
         List<Employee> result = employeeList.stream()
-                .filter(employee -> employee.getEmployeeName().contains(searchString))
+                .filter(employee -> employee.getName().contains(searchString))
                 .collect(Collectors.toList());
         log.info("Found {} employees matching search criteria.", result.size());
         return result;
     }
 
     public Employee getEmployeeById(String id) {
-        ResponseEntity<EmployeeResponse> responseEntity =
-                restTemplate.exchange(Constants.GET_EMPLOYEE_ID_URL, HttpMethod.GET, null, EmployeeResponse.class, id);
+        try {
+            ResponseEntity<ClientResponse<Employee>> responseEntity = restTemplate.exchange(
+                    Constants.GET_EMPLOYEE_ID_URL,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<>() {
+                    },
+                    id
+            );
 
-        if (responseEntity.getStatusCode() == HttpStatus.OK) {
-            log.info("Successfully retrieved employee details with ID: {}", id);
-        } else {
-            log.warn("Failed to retrieve employee with ID: {}", id);
+            return responseEntity.getBody().getData();
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Employee not found for ID: {}", id);
+            return null; // or throw a custom exception if preferred
+        }catch (HttpClientErrorException.TooManyRequests e) {
+            log.error("Rate limit exceeded when calling getEmployeeById with id {}. Retry after: {}",
+                    id, e.getResponseHeaders().getFirst("Retry-After")); // if header exists
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded, please try again later.");
         }
 
-        return responseEntity.getBody().getData();
     }
 
     public Integer getHighestSalaryOfEmployee() {
@@ -85,9 +95,9 @@ public class EmployeeService implements IEmployeeService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
         Integer highestSalary = employeeList.stream()
-                .max(Comparator.comparing(Employee::getEmployeeSalary))
+                .max(Comparator.comparing(Employee::getSalary))
                 .get()
-                .getEmployeeSalary();
+                .getSalary();
         log.info("Highest salary among employees is: {}", highestSalary);
         return highestSalary;
     }
@@ -103,9 +113,9 @@ public class EmployeeService implements IEmployeeService {
         }
 
         List<String> topTenEmployeeNames = employeeList.stream()
-                .sorted(Comparator.comparing(Employee::getEmployeeSalary).reversed())
+                .sorted(Comparator.comparing(Employee::getSalary).reversed())
                 .limit(10)
-                .map(Employee::getEmployeeName)
+                .map(Employee::getName)
                 .collect(Collectors.toList());
         log.info("Top 10 highest earning employees: {}", topTenEmployeeNames);
         return topTenEmployeeNames;
@@ -124,31 +134,35 @@ public class EmployeeService implements IEmployeeService {
         input.setAge(Integer.parseInt(age));
         input.setTitle(title);
 
-        ResponseEntity<EmployeeResponse> employeeResponseResponseEntity = restTemplate.exchange(
+        ResponseEntity<EmployeeResponse> responseResponseEntity = restTemplate.exchange(
                 Constants.GET_EMPLOYEE_URL, HttpMethod.POST, new HttpEntity<>(input), EmployeeResponse.class);
 
-        if (employeeResponseResponseEntity.getStatusCode() == HttpStatus.CREATED) {
-            log.info("Successfully created employee: {}", name);
-        } else {
-            log.warn("Failed to create employee with name: {}", name);
-        }
-
-        return employeeResponseResponseEntity.getBody().getData();
+        return responseResponseEntity.getBody().getData();
     }
 
     public String deleteEmployee(String id) {
-
         Employee employee = getEmployeeById(id);
-
-        ResponseEntity<EmployeeResponse> employeeResponseResponseEntity = restTemplate.exchange(
-                Constants.GET_EMPLOYEE_URL, HttpMethod.DELETE, null, EmployeeResponse.class, id);
-
-        if (employeeResponseResponseEntity.getStatusCode() == HttpStatus.OK) {
-            log.info("Successfully deleted employee with name: {}", employee.getEmployeeName());
-            return employee.getEmployeeName();
-        } else {
-            log.warn("Failed to delete employee with ID: {}", id);
+        if (employee == null) {
             return "Employee does not exist";
+        }
+        DeleteEmployeeInput input = new DeleteEmployeeInput();
+        input.setName(employee.getName());
+
+        ResponseEntity<DeleteEmployeeResponse<Boolean>> responseEntity = restTemplate.exchange(
+                Constants.GET_EMPLOYEE_URL,
+                HttpMethod.DELETE,
+                new HttpEntity<>(input),
+                new ParameterizedTypeReference<>() {
+                }
+        );
+
+        Boolean success = responseEntity.getBody().getData();
+        if (Boolean.TRUE.equals(success)) {
+            log.info("Successfully deleted employee with name: {}", employee.getName());
+            return String.format("Employee %s has been deleted", employee.getName());
+        } else {
+            log.warn("Failed to delete employee");
+            return "Failed to delete employee";
         }
     }
 }

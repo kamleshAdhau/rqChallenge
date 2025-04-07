@@ -1,11 +1,14 @@
 package com.reliaquest.api.controller;
 
 import com.reliaquest.api.model.Employee;
+import com.reliaquest.api.model.EmployeeRes;
 import com.reliaquest.api.service.impl.EmployeeService;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,7 +20,9 @@ public class EmployeeController implements IEmployeeController<Employee, Map<Str
     @Autowired
     private EmployeeService employeeService;
 
+
     @Override
+    @Cacheable("employees")
     public ResponseEntity<List<Employee>> getAllEmployees() {
         return new ResponseEntity<>(employeeService.getAllEmployees(), HttpStatus.OK);
     }
@@ -28,6 +33,7 @@ public class EmployeeController implements IEmployeeController<Employee, Map<Str
     }
 
     @Override
+
     public ResponseEntity<Employee> getEmployeeById(String id) {
         return new ResponseEntity<>(employeeService.getEmployeeById(id), HttpStatus.OK);
     }
@@ -43,6 +49,7 @@ public class EmployeeController implements IEmployeeController<Employee, Map<Str
     }
 
     @Override
+    @CacheEvict(value = {"employees"}, allEntries = true)
     public ResponseEntity<Employee> createEmployee(Map<String, Object> employeeInput) {
         return new ResponseEntity<>(
                 employeeService.createEmployee(employeeInput),
@@ -50,6 +57,7 @@ public class EmployeeController implements IEmployeeController<Employee, Map<Str
     }
 
     @Override
+    @CacheEvict(value = {"employees"}, allEntries = true)
     public ResponseEntity<String> deleteEmployeeById(String id) {
         return new ResponseEntity<>(employeeService.deleteEmployee(id), HttpStatus.OK);
     }
