@@ -32,13 +32,9 @@ public class EmployeeServiceImpl implements IEmployeeService {
     @Cacheable("employees")
     public List<Employee> getAllEmployees() {
         log.info("Fetching all employees from external API.");
-        try {
-            URI uri = new URI(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
-            ResponseEntity<EmployeeList> response = restTemplate.exchange(uri, HttpMethod.GET, null, EmployeeList.class);
-            return response.getBody().getData();
-        } catch (URISyntaxException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid URI", e);
-        }
+        URI uri = URI.create(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
+        ResponseEntity<EmployeeList> response = restTemplate.exchange(uri, HttpMethod.GET, null, EmployeeList.class);
+        return response.getBody().getData(); // if null, global exception will handle it
     }
 
     public List<Employee> getEmployeesByNameSearch(String searchString) {
@@ -49,19 +45,10 @@ public class EmployeeServiceImpl implements IEmployeeService {
 
     @Cacheable(value = "employeeById", key = "#id")
     public Employee getEmployeeById(String id) {
-        try {
-            URI uri = new URI(apiProperties.getBaseUrl() + apiProperties.getEmployeeByIdEndpoint().replace("{id}", id));
-            ResponseEntity<ClientResponse<Employee>> response = restTemplate.exchange(uri, HttpMethod.GET, null,
-                    new ParameterizedTypeReference<>() {});
-            return response.getBody().getData();
-        } catch (HttpClientErrorException.NotFound e) {
-            log.warn("Employee not found for ID: {}", id);
-            return null;
-        } catch (HttpClientErrorException.TooManyRequests e) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded");
-        } catch (URISyntaxException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid URI", e);
-        }
+        URI uri = URI.create(apiProperties.getBaseUrl() + apiProperties.getEmployeeByIdEndpoint().replace("{id}", id));
+        ResponseEntity<ClientResponse<Employee>> response = restTemplate.exchange(
+                uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+        return response.getBody().getData(); // any NPE here will be caught globally
     }
 
     public Integer getHighestSalaryOfEmployee() {
@@ -87,14 +74,9 @@ public class EmployeeServiceImpl implements IEmployeeService {
         input.setAge(Integer.parseInt((String) inputMap.get("age")));
         input.setTitle((String) inputMap.get("title"));
 
-        try {
-            URI uri = new URI(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
-            ResponseEntity<EmployeeResponse> response = restTemplate.exchange(uri, HttpMethod.POST,
-                    new HttpEntity<>(input), EmployeeResponse.class);
-            return response.getBody().getData();
-        } catch (URISyntaxException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid URI", e);
-        }
+        URI uri = URI.create(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
+        ResponseEntity<EmployeeResponse> response = restTemplate.exchange(uri, HttpMethod.POST, new HttpEntity<>(input), EmployeeResponse.class);
+        return response.getBody().getData();
     }
 
     @CacheEvict(value = {"employees", "employeeById"}, allEntries = true)
@@ -105,17 +87,11 @@ public class EmployeeServiceImpl implements IEmployeeService {
         DeleteEmployeeInput input = new DeleteEmployeeInput();
         input.setName(employee.getName());
 
-        try {
-            URI uri = new URI(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
-            ResponseEntity<DeleteEmployeeResponse<Boolean>> response = restTemplate.exchange(uri, HttpMethod.DELETE,
-                    new HttpEntity<>(input), new ParameterizedTypeReference<>() {});
-            if (Boolean.TRUE.equals(response.getBody().getData())) {
-                return String.format("Employee %s has been deleted", employee.getName());
-            }
-        } catch (URISyntaxException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid URI", e);
+        URI uri = URI.create(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
+        ResponseEntity<DeleteEmployeeResponse<Boolean>> response = restTemplate.exchange(uri, HttpMethod.DELETE, new HttpEntity<>(input), new ParameterizedTypeReference<>() {});
+        if (Boolean.TRUE.equals(response.getBody().getData())) {
+            return String.format("Employee %s has been deleted", employee.getName());
         }
-
         return "Failed to delete employee";
     }
 }
