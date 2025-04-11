@@ -1,23 +1,19 @@
 package com.reliaquest.api.service.impl;
 
-import com.reliaquest.api.utils.EmployeeApiProperties;
 import com.reliaquest.api.model.*;
 import com.reliaquest.api.service.IEmployeeService;
+import com.reliaquest.api.utils.EmployeeApiProperties;
+import java.net.URI;
+import java.util.*;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -45,9 +41,10 @@ public class EmployeeServiceImpl implements IEmployeeService {
 
     @Cacheable(value = "employeeById", key = "#id")
     public Employee getEmployeeById(String id) {
-        URI uri = URI.create(apiProperties.getBaseUrl() + apiProperties.getEmployeeByIdEndpoint().replace("{id}", id));
-        ResponseEntity<ClientResponse<Employee>> response = restTemplate.exchange(
-                uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+        URI uri = URI.create(apiProperties.getBaseUrl()
+                + apiProperties.getEmployeeByIdEndpoint().replace("{id}", id));
+        ResponseEntity<ClientResponse<Employee>> response =
+                restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
         return response.getBody().getData(); // any NPE here will be caught globally
     }
 
@@ -66,7 +63,9 @@ public class EmployeeServiceImpl implements IEmployeeService {
                 .collect(Collectors.toList());
     }
 
-    @CacheEvict(value = {"employees", "employeeById"}, allEntries = true)
+    @CacheEvict(
+            value = {"employees", "employeeById"},
+            allEntries = true)
     public Employee createEmployee(Map<String, Object> inputMap) {
         EmployeeInput input = new EmployeeInput();
         input.setName((String) inputMap.get("name"));
@@ -75,11 +74,14 @@ public class EmployeeServiceImpl implements IEmployeeService {
         input.setTitle((String) inputMap.get("title"));
 
         URI uri = URI.create(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
-        ResponseEntity<EmployeeResponse> response = restTemplate.exchange(uri, HttpMethod.POST, new HttpEntity<>(input), EmployeeResponse.class);
+        ResponseEntity<EmployeeResponse> response =
+                restTemplate.exchange(uri, HttpMethod.POST, new HttpEntity<>(input), EmployeeResponse.class);
         return response.getBody().getData();
     }
 
-    @CacheEvict(value = {"employees", "employeeById"}, allEntries = true)
+    @CacheEvict(
+            value = {"employees", "employeeById"},
+            allEntries = true)
     public String deleteEmployee(String id) {
         Employee employee = getEmployeeById(id);
         if (employee == null) return "Employee does not exist";
@@ -88,7 +90,8 @@ public class EmployeeServiceImpl implements IEmployeeService {
         input.setName(employee.getName());
 
         URI uri = URI.create(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
-        ResponseEntity<DeleteEmployeeResponse<Boolean>> response = restTemplate.exchange(uri, HttpMethod.DELETE, new HttpEntity<>(input), new ParameterizedTypeReference<>() {});
+        ResponseEntity<DeleteEmployeeResponse<Boolean>> response = restTemplate.exchange(
+                uri, HttpMethod.DELETE, new HttpEntity<>(input), new ParameterizedTypeReference<>() {});
         if (Boolean.TRUE.equals(response.getBody().getData())) {
             return String.format("Employee %s has been deleted", employee.getName());
         }

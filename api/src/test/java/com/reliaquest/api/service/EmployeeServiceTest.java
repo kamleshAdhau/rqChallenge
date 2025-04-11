@@ -1,10 +1,23 @@
 package com.reliaquest.api.service;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.when;
+
 import com.reliaquest.api.model.ClientResponse;
 import com.reliaquest.api.model.Employee;
 import com.reliaquest.api.model.EmployeeList;
 import com.reliaquest.api.service.impl.EmployeeServiceImpl;
 import com.reliaquest.api.utils.EmployeeApiProperties;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -17,20 +30,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.isNull;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -105,14 +104,10 @@ public class EmployeeServiceTest {
         ClientResponse<Employee> mockClientResponse = new ClientResponse<>();
         mockClientResponse.setData(expectedEmployee);
 
-        ResponseEntity<ClientResponse<Employee>> mockResponse =
-                new ResponseEntity<>(mockClientResponse, HttpStatus.OK);
+        ResponseEntity<ClientResponse<Employee>> mockResponse = new ResponseEntity<>(mockClientResponse, HttpStatus.OK);
 
         when(restTemplate.exchange(
-                eq(resolvedUri),
-                eq(HttpMethod.GET),
-                isNull(),
-                any(ParameterizedTypeReference.class)))
+                        eq(resolvedUri), eq(HttpMethod.GET), isNull(), any(ParameterizedTypeReference.class)))
                 .thenReturn(mockResponse);
 
         // Act
@@ -125,22 +120,15 @@ public class EmployeeServiceTest {
         assertEquals(expectedEmployee.getId(), actualEmployee.getId());
     }
 
-
-
     private void getAllEmployee() throws URISyntaxException {
         EmployeeList employeeListWrapper = new EmployeeList(this.employeeList);
 
         when(apiProperties.getBaseUrl()).thenReturn(BASE_URL);
         when(apiProperties.getAllEmployeeEndpoint()).thenReturn(EMPLOYEE_LIST_ENDPOINT);
 
-        URI uri = new URI(BASE_URL+EMPLOYEE_LIST_ENDPOINT);
+        URI uri = new URI(BASE_URL + EMPLOYEE_LIST_ENDPOINT);
 
-        when(restTemplate.exchange(
-                eq(uri),
-                eq(HttpMethod.GET),
-                isNull(),
-                eq(EmployeeList.class)))
+        when(restTemplate.exchange(eq(uri), eq(HttpMethod.GET), isNull(), eq(EmployeeList.class)))
                 .thenReturn(new ResponseEntity<>(employeeListWrapper, HttpStatus.OK));
     }
-
 }
