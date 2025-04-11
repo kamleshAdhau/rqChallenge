@@ -67,8 +67,8 @@ public class EmployeeServiceTest {
         employeeList.add(Employee.builder()
                 .id(UUID.fromString("8f64b123-c2bb-4bfa-bcd7-81ec33b71b2a"))
                 .name("Ranjeet")
-                .age(23)
-                .salary(1000)
+                .age(28)
+                .salary(1001)
                 .email("ranjeet@example.com")
                 .title("Tester")
                 .build());
@@ -138,18 +138,18 @@ public class EmployeeServiceTest {
                 .build());
         employeeList.add(Employee.builder()
                 .id(UUID.fromString("a19cd15b-55f5-4e35-b2e8-55ab9a2a6a18"))
-                .name("Yuri")
+                .name("Yuvraj")
                 .age(27)
                 .salary(10004)
-                .email("yuri@example.com")
+                .email("Yuvraj@example.com")
                 .title("Team Lead")
                 .build());
         employeeList.add(Employee.builder()
                 .id(UUID.fromString("f2a6e2fc-5a26-4efb-8047-7f65ebc5db2f"))
-                .name("Jenette")
+                .name("Sachin")
                 .age(27)
                 .salary(10005)
-                .email("jenette@example.com")
+                .email("Sachin@example.com")
                 .title("Director")
                 .build());
     }
@@ -298,7 +298,7 @@ public class EmployeeServiceTest {
     void testGetTopTenHighestEarningEmployeeNames_shouldReturnCorrectList() throws URISyntaxException {
         getAllEmployee();
         String[] expectedNames = {
-            "Kennedy", "Nixon", "Jenette", "Yuri", "Caesar", "Vance", "Doris", "Haley", "Tiger", "Bradley"
+            "Kennedy", "Nixon", "Sachin", "Yuvraj", "Caesar", "Vance", "Doris", "Haley", "Tiger", "Bradley"
         };
         List<String> expectedNameList = Arrays.asList(expectedNames);
         List<String> actualNamesList = employeeService.getTopTenHighestEarningEmployeeNames();
