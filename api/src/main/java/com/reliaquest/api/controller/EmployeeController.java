@@ -1,26 +1,24 @@
 package com.reliaquest.api.controller;
 
 import com.reliaquest.api.model.Employee;
-import com.reliaquest.api.service.impl.EmployeeService;
-import java.util.List;
-import java.util.Map;
+import com.reliaquest.api.service.impl.EmployeeServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @Slf4j
 public class EmployeeController implements IEmployeeController<Employee, Map<String, Object>> {
 
     @Autowired
-    private EmployeeService employeeService;
+    private EmployeeServiceImpl employeeService;
 
     @Override
-    @Cacheable("employees")
     public ResponseEntity<List<Employee>> getAllEmployees() {
         return new ResponseEntity<>(employeeService.getAllEmployees(), HttpStatus.OK);
     }
@@ -46,17 +44,11 @@ public class EmployeeController implements IEmployeeController<Employee, Map<Str
     }
 
     @Override
-    @CacheEvict(
-            value = {"employees"},
-            allEntries = true)
     public ResponseEntity<Employee> createEmployee(Map<String, Object> employeeInput) {
         return new ResponseEntity<>(employeeService.createEmployee(employeeInput), HttpStatus.CREATED);
     }
 
     @Override
-    @CacheEvict(
-            value = {"employees"},
-            allEntries = true)
     public ResponseEntity<String> deleteEmployeeById(String id) {
         return new ResponseEntity<>(employeeService.deleteEmployee(id), HttpStatus.OK);
     }

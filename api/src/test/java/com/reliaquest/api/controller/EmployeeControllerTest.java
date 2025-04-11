@@ -1,15 +1,8 @@
 package com.reliaquest.api.controller;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reliaquest.api.model.Employee;
-import com.reliaquest.api.service.impl.EmployeeService;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.reliaquest.api.service.impl.EmployeeServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +10,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 // Load only the EmployeeController class
 @WebMvcTest(EmployeeController.class)
@@ -26,7 +27,7 @@ public class EmployeeControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private EmployeeService employeeService;
+    private EmployeeServiceImpl employeeService;
 
     @Autowired
     private ObjectMapper objectMapper;
