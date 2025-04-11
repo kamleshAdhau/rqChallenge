@@ -14,6 +14,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Slf4j
@@ -30,7 +31,11 @@ public class EmployeeServiceImpl implements IEmployeeService {
         log.info("Fetching all employees from external API.");
         URI uri = URI.create(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
         ResponseEntity<EmployeeList> response = restTemplate.exchange(uri, HttpMethod.GET, null, EmployeeList.class);
-        return response.getBody().getData(); // if null, global exception will handle it
+        if (response.getBody() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "External service returned empty response");
+        }
+        return response.getBody().getData();
     }
 
     public List<Employee> getEmployeesByNameSearch(String searchString) {
@@ -39,13 +44,17 @@ public class EmployeeServiceImpl implements IEmployeeService {
                 .collect(Collectors.toList());
     }
 
-    @Cacheable(value = "employeeById", key = "#id")
     public Employee getEmployeeById(String id) {
         URI uri = URI.create(apiProperties.getBaseUrl()
                 + apiProperties.getEmployeeByIdEndpoint().replace("{id}", id));
-        ResponseEntity<ClientResponse<Employee>> response =
+        ResponseEntity<ApiResponse<Employee>> response =
                 restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
-        return response.getBody().getData(); // any NPE here will be caught globally
+        if (response.getBody() == null || response.getBody().getData() == null) {
+            log.warn("No employee found or null response for ID: {}", id);
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "External service returned empty response");
+        }
+        return response.getBody().getData();
     }
 
     public Integer getHighestSalaryOfEmployee() {
@@ -64,7 +73,7 @@ public class EmployeeServiceImpl implements IEmployeeService {
     }
 
     @CacheEvict(
-            value = {"employees", "employeeById"},
+            value = {"employees"},
             allEntries = true)
     public Employee createEmployee(Map<String, Object> inputMap) {
         EmployeeInput input = new EmployeeInput();
@@ -74,13 +83,18 @@ public class EmployeeServiceImpl implements IEmployeeService {
         input.setTitle((String) inputMap.get("title"));
 
         URI uri = URI.create(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
-        ResponseEntity<EmployeeResponse> response =
-                restTemplate.exchange(uri, HttpMethod.POST, new HttpEntity<>(input), EmployeeResponse.class);
+        ResponseEntity<ApiResponse<Employee>> response = restTemplate.exchange(
+                uri, HttpMethod.POST, new HttpEntity<>(input), new ParameterizedTypeReference<>() {});
+        if (response.getBody() == null || response.getBody().getData() == null) {
+            log.warn("Unable to create employee");
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "External service returned empty response");
+        }
         return response.getBody().getData();
     }
 
     @CacheEvict(
-            value = {"employees", "employeeById"},
+            value = {"employees"},
             allEntries = true)
     public String deleteEmployee(String id) {
         Employee employee = getEmployeeById(id);
@@ -90,7 +104,7 @@ public class EmployeeServiceImpl implements IEmployeeService {
         input.setName(employee.getName());
 
         URI uri = URI.create(apiProperties.getBaseUrl() + apiProperties.getAllEmployeeEndpoint());
-        ResponseEntity<DeleteEmployeeResponse<Boolean>> response = restTemplate.exchange(
+        ResponseEntity<ApiResponse<Boolean>> response = restTemplate.exchange(
                 uri, HttpMethod.DELETE, new HttpEntity<>(input), new ParameterizedTypeReference<>() {});
         if (Boolean.TRUE.equals(response.getBody().getData())) {
             return String.format("Employee %s has been deleted", employee.getName());
